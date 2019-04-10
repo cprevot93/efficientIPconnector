@@ -1,2 +1,5 @@
+requests
+suds-jurko
+lxml
 nose
 sphinx
