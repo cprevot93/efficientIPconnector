@@ -10,9 +10,20 @@ class Subnet(object):
     self.name = name
     self.adom = adom
     helpers.logger.debug("subnet name: " + self.name)
+    self.data = None
 
-  def create(self):
-    return
+  def create_on_FMG(self):
+    obj = {
+      'name': self.name,
+      'type': 'ipmask',
+      'color': 13,
+      'subnet': [self.subnet, self.netmask]
+      }
+    urlpf = "pm/config/" + self.adom
+    code, data = helpers.api.add(urlpf + '/obj/firewall/address', obj)
+    helpers.logger.info("status: " + str(code))
+
+    return code,data
 
   def update(self):
     pass
@@ -20,6 +31,7 @@ class Subnet(object):
   def is_new(self):
     status,data = helpers.firewall_table(self.adom, self.name)
     if status['code'] == 0:
+      self.data = data
       return False
     else:
       return True

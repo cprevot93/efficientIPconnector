@@ -18,7 +18,7 @@ def main(argv):
   adom = "global"
   helpers.api.login(ip, user, passwd)
   helpers.api.debug('off')
-  sub = core.Subnet("gall32", "0.0.0.0", "24")
+  sub = core.Subnet("gall", "0.0.0.0", "24")
   if sub.is_new():
     print("create")
   else:
