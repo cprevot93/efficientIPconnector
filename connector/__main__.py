@@ -18,11 +18,8 @@ def main(argv):
   adom = "global"
   helpers.api.login(ip, user, passwd)
   helpers.api.debug('off')
-  sub = core.Subnet("gall", "0.0.0.0", "24")
-  if sub.is_new():
-    print("create")
-  else:
-    print("update")
+  sub = core.Subnet("gall32", "0.0.0.0", "0.0.0.0", adom)
+  sub.push_to_FMG()
   helpers.api.logout()
 
 if __name__ == "__main__":

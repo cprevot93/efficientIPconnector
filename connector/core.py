@@ -5,33 +5,57 @@ from ftntlib import FortiManagerJSON
 
 class Subnet(object):
   def __init__(self, name, subnet, netmask, adom="global"):
-    self.netmask = netmask
-    self.subnet = subnet
-    self.name = name
-    self.adom = adom
-    helpers.logger.debug("subnet name: " + self.name)
-    self.data = None
+    self.__netmask = netmask
+    self.__subnet = subnet
+    self.__name = name
+    if adom == "global":
+      self.__adom = adom
+    else:
+      self.__adom = "adom/" + adom
+    helpers.logger.debug("subnet name: " + self.__name)
+    self.__data = None
 
-  def create_on_FMG(self):
+  def push_to_FMG(self):
+    if self._is_new():
+      self._FMG_create()
+    else:
+      self._FMG_update()
+  
+  def _FMG_create(self):
+    helpers.logger.info("Creating subnet " + self.__name + " on FMG")
+    helpers.logger.debug("\n\tsubnet: " + self.__subnet + "\n\tnetmask: " + self.__netmask + "\n\tadom: " + self.__adom)
     obj = {
-      'name': self.name,
+      'name': self.__name,
       'type': 'ipmask',
       'color': 13,
-      'subnet': [self.subnet, self.netmask]
+      'subnet': [self.__subnet, self.__netmask]
       }
-    urlpf = "pm/config/" + self.adom
+    urlpf = "pm/config/" + self.__adom
     code, data = helpers.api.add(urlpf + '/obj/firewall/address', obj)
-    helpers.logger.info("status: " + str(code))
+    if code['code'] != 0:
+      raise RuntimeError(code['message'])
 
     return code,data
 
-  def update(self):
-    pass
+  def _FMG_update(self):
+    helpers.logger.info("Creating subnet " + self.__name + " on FMG")
+    helpers.logger.debug("\n\tsubnet: " + self.__subnet + "\n\tnetmask: " + self.__netmask + "\n\tadom: " + self.__adom)
+    obj = {
+      'name': self.__name,
+      'type': 'ipmask',
+      'subnet': [self.__subnet, self.__netmask]
+      }
+    urlpf = "pm/config/" + self.__adom
+    code, data = helpers.api.update(urlpf + '/obj/firewall/address', obj)
+    if code['code'] != 0:
+      raise RuntimeError(code['message'])
 
-  def is_new(self):
-    status,data = helpers.firewall_table(self.adom, self.name)
+    return code,data
+
+  def _is_new(self):
+    status,data = helpers.firewall_table(self.__adom, self.__name)
     if status['code'] == 0:
-      self.data = data
+      self.__data = data
       return False
     else:
       return True
