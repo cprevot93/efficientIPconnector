@@ -5,10 +5,10 @@ from ftntlib import FortiManagerJSON
 from .fmgobject import FMG_object
 
 class Group(FMG_object):
-  def __init__(self, name, subgrp: list, subnets: list, adom="global", ipv6=False):
+  def __init__(self, name, adom="global", ipv6=False):
     FMG_object.__init__(self, name, adom, ipv6)
-    self.__subgrp = subgrp
-    self.__subnets = subnets
+    self.__subgrp = list()
+    self.__subnets = list()
     self.__member = list()
 
   def _FMG_create(self):
@@ -68,7 +68,59 @@ class Group(FMG_object):
     return code,data
 
   def FMG_delete(self):
-    pass
+    helpers.logger.info("Deleting group " + self.get_name() + " on FMG")
+    urlpf = "pm/config/" + self.get_adom()
+    url = urlpf + '/obj/firewall/addrgrp'
+    if self.is_ipv6():
+      url += "6"
+    
+    url += "/" + self.get_name()
+    helpers.logger.debug("URL: " + url)
+    code, data = helpers.api.delete(url)
+
+    if code['code'] != 0:
+      raise RuntimeError(code['message'])
+    return
+
+  def add_subnet(self, sub):
+    if type(sub) is not Subnet:
+      raise Exception("parameter type error")
+    if self.is_ipv6() != sub.is_ipv6():
+      raise RuntimeError("Error IP version")
+    if sub in self.__subnets:
+      raise RuntimeError("Subnet already added to group")
+
+    helpers.logger.debug("Add " + sub.get_name() + " subnet to group " + self.get_name())
+    self.__subnets.append(sub)
+    return
+
+  def del_subnet(self, sub):
+    try:
+      helpers.logger.debug("Remove " + sub.get_name() + " subnet from group " + self.get_name())
+      self.__subnets.remove(sub)
+    except:
+      pass
+    return
+
+  def add_subgrp(self, grp):
+    if type(grp) is not Group:
+      raise Exception("parameter type error")
+    if self.is_ipv6() != grp.is_ipv6():
+      raise RuntimeError("Error IP version")
+    if grp in self.__subgrp:
+      raise RuntimeError("SubGroup already added to group")
+
+    helpers.logger.debug("Add " + grp.get_name() + " subgroup to group " + self.get_name())
+    self.__subgrp.append(grp)
+    return
+
+  def del_subgrp(self, grp):
+    try:
+      helpers.logger.debug("Remove " + grp.get_name() + " subgroup from group " + self.get_name())
+      self.__subgrp.remove(grp)
+    except:
+      pass
+    return
 
   def _is_new(self):
     status,data = helpers.firewall_table(self.get_adom(), self.get_name())
@@ -77,19 +129,3 @@ class Group(FMG_object):
       return False
     else:
       return True
-
-#   code,d = api.get(urlpf + '/obj/firewall/addrgrp/' + addrgrp)
-#   if type(d['data']['member']) is list:
-#     member = d['data']['member']
-#   if objname not in member:
-#     member.append(objname)
-#   else:
-#     member = [d['data']['member'], objname]
-#     data = {'member':member}
-#   api.update(urlpf + '/obj/firewall/addrgrp/' + addrgrp, data)
-#   scope = [ {'name' : 'All_FortiGate'} ]
-#   flags = ['install_chg','generate_rev']
-#   ret_code, response = api.install_package(adom, package, scope, flags)
-#   api.logout()
-#   api.debug('off')
-#   return

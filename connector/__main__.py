@@ -19,7 +19,8 @@ def main(argv):
   sub = Subnet("gall32", "0.0.0.0", "255.255.0.0", adom)
   sub.push_to_FMG()
 
-  grp = Group("test_group", {}, {sub})
+  grp = Group("test_group")
+  grp.add_subnet(sub)
   grp.push_to_FMG()
 
   helpers.api.logout()
