@@ -1,42 +1,37 @@
-import json
+# -*- coding: utf-8 -*-
 from . import helpers
 from .subnet import Subnet
 from ftntlib import FortiManagerJSON
+from .fmgobject import FMG_object
 
-class Group(object):
-  def __init__(self, name, subgrp: list, subnets: list, adom="global"):
-    self.__name = name
+class Group(FMG_object):
+  def __init__(self, name, subgrp: list, subnets: list, adom="global", ipv6=False):
+    FMG_object.__init__(self, name, adom, ipv6)
     self.__subgrp = subgrp
     self.__subnets = subnets
-    self.__adom = adom
-    self.__data = None
-
-  def push_to_FMG(self):
-    try:
-      if self._is_new():
-        self._FMG_create()
-      else:
-        self._FMG_update()
-    except RuntimeError as e:
-      raise e
 
   def _FMG_create(self):
-    helpers.logger.info("Creating group " + self.__name + " on FMG")
-    helpers.logger.debug("\n\tsubgroups: " + str(self.__subgrp) + "\n\tsubnets: " + str(self.__subnets) + "\n\tadom: " + self.__adom)
-    urlpf = "pm/config/" + self.__adom
+    helpers.logger.info("Creating group " + self.get_name() + " on FMG")
+    urlpf = "pm/config/" + self.get_adom()
+    url = urlpf + "/obj/firewall/addrgrp"
     member = list()
+
     for sub in self.__subnets:
       member.append(sub.get_name())
+    debug = "\n\tsubnets: " + str(member)
+
     for grp in self.__subgrp:
       member.append(grp.get_name())
+    debug += "\n\tsubgroups: " + str(self.__subgrp) + "\n\tadom: " + self.get_adom()
+    helpers.logger.debug(debug)
     obj = {
-      'name': self.__name,
+      'name': self.get_name(),
       'comment': 'Created by efficientIP',
       'color': 13,
       'member': member
       }
-    print(str(obj))
-    code, data = helpers.api.add(urlpf + '/obj/firewall/addrgrp', obj)
+    helpers.logger.debug("URL: " + url)
+    code, data = helpers.api.add(url, obj)
 
     if code['code'] != 0:
       raise RuntimeError(code['message'])
@@ -44,15 +39,37 @@ class Group(object):
     return code,data
 
   def _FMG_update(self):
-    pass
+    helpers.logger.info("Updating group " + self.get_name() + " on FMG")
+    urlpf = "pm/config/" + self.get_adom()
+    url = urlpf + "/obj/firewall/addrgrp"
+    member = list()
 
-  def get_name(self):
-    return self.__name
+    for sub in self.__subnets:
+      member.append(sub.get_name())
+    debug = "\n\tsubnets: " + str(member)
+
+    for grp in self.__subgrp:
+      member.append(grp.get_name())
+    debug += "\n\tsubgroups: " + str(self.__subgrp) + "\n\tadom: " + self.get_adom()
+    helpers.logger.debug(debug)
+    obj = {
+      'name': self.get_name(),
+      'comment': 'Created by efficientIP',
+      'color': 13,
+      'member': member
+      }
+    helpers.logger.debug("URL: " + url)
+    code, data = helpers.api.add(url, obj)
+
+    if code['code'] != 0:
+      raise RuntimeError(code['message'])
+
+    return code,data
 
   def _is_new(self):
-    status,data = helpers.firewall_table(self.__adom, self.__name)
+    status,data = helpers.firewall_table(self.get_adom(), self.get_name())
     if status['code'] == 0:
-      self.__data = data
+      self.set_data(data)
       return False
     else:
       return True
