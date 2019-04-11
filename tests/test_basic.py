@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from .context import sample
+from .context import connector
 
 import unittest
 
-
 class BasicTestSuite(unittest.TestCase):
-    """Basic test cases."""
+  """Basic test cases."""
 
-    def test_absolute_truth_and_meaning(self):
-        assert True
+  def add_new_subnet_and_delete(self):
+    
+    assert True
 
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()
