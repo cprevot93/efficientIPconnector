@@ -42,6 +42,7 @@ class Group(FMG_object):
     return code,data
 
   def _FMG_update(self):
+    # TODO: Idempotence
     helpers.logger.info("Updating group " + self.get_name() + " on FMG")
     urlpf = "pm/config/" + self.get_adom()
     url = urlpf + "/obj/firewall/addrgrp"
