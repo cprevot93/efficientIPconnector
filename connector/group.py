@@ -123,7 +123,7 @@ class Group(FMG_object):
     return
 
   def _is_new(self):
-    status,data = helpers.firewall_table(self.get_adom(), self.get_name())
+    status,data = helpers.group_table(self.get_adom(), self.get_name())
     if status['code'] == 0:
       self.set_data(data)
       return False

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from connector import helpers
 
-import connector
+ip_FMG = "10.10.20.254"
+user ='admin'
+passwd ='AdminFMG'
+adom = "global"
+helpers.api.login(ip_FMG, user, passwd)
+helpers.api.debug('off')

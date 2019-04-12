@@ -17,7 +17,7 @@ def main(argv):
   helpers.api.login(ip_FMG, user, passwd)
   helpers.api.debug('off')
   sub = Subnet("gall32", "0.0.0.0", "255.255.0.0", adom)
-  sub.push_to_FMG()
+  # sub.push_to_FMG()
 
   grp = Group("test_group")
   grp.add_subnet(sub)
