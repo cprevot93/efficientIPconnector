@@ -17,11 +17,29 @@ def main(argv):
   helpers.api.login(ip_FMG, user, passwd)
   helpers.api.debug('off')
   sub = Subnet("gall32", "0.0.0.0", "255.255.0.0", adom)
+  sub2 = Subnet("gall32_2", "10.0.0.0", "255.0.0.0", adom)
   # sub.push_to_FMG()
+
+  subnets = list()
+  subnets.append(sub)
+  subnets.append(sub2)
+
+  for s in subnets:
+    s.push_to_FMG()
 
   grp = Group("test_group")
   grp.add_subnet(sub)
-  grp.push_to_FMG()
+  grp.add_subnet(sub2)
+
+  grp2 = Group("test_group_2")
+  grp2.add_subnet(sub)
+
+  groups = list()
+  groups.append(grp)
+  groups.append(grp2)
+
+  for g in groups:
+    g.push_to_FMG()
 
   helpers.api.logout()
 
