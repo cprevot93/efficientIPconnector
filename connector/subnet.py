@@ -38,19 +38,29 @@ class Subnet(FMG_object):
     return code,data
 
   def _FMG_update(self):
-    # TODO: Idempotence
     helpers.logger.info("Updating subnet " + self.get_name() + " on FMG")
     helpers.logger.debug("\n\tsubnet: " + self.__subnet + "\n\tnetmask: " + self.__netmask + "\n\tadom: " + self.get_adom())
+
     urlpf = "pm/config/" + self.get_adom()
     url = urlpf + "/obj/firewall/address"
+
     if self.is_ipv6():
       obj = { 'ip6': self.__subnet + "/" + self.__netmask }
       url = url + "6"
     else:
       obj = { 'subnet': [self.__subnet, self.__netmask] }
-    
+    url += "/" + self.get_name()
     helpers.logger.debug("URL: " + url)
-    code, data = helpers.api.update(url + "/" + self.get_name(), obj)
+
+    # Idempotence
+    code = {'code': 0, 'message': 'No change made'}
+    if self.is_ipv6():
+      if self.get_data()['ip6'] == obj['ip6']:
+        return code
+    else:
+      if self.get_data()['subnet'] == obj['subnet']:
+        return code
+    code, data = helpers.api.update(url, obj)
 
     if code['code'] != 0:
       raise RuntimeError(code['message'])

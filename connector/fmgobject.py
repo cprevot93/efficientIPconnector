@@ -15,9 +15,9 @@ class FMG_object:
   def push_to_FMG(self):
     try:
       if self._is_new():
-        self._FMG_create()
+        helpers.logger.info(self._FMG_create())
       else:
-        self._FMG_update()
+        helpers.logger.info(self._FMG_update())
     except RuntimeError as e:
       raise e
 

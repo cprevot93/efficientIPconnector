@@ -61,6 +61,10 @@ class Group(FMG_object):
     helpers.logger.debug(debug)
     obj = { 'member': member }
     helpers.logger.debug("URL: " + url)
+
+    # Idempotence
+    if self.get_data()['member'] == obj['member']:
+      return {'code': 0, 'message': 'No change made'}
     code, data = helpers.api.update(url, obj)
 
     if code['code'] != 0:

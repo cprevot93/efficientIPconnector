@@ -18,11 +18,13 @@ def main(argv):
   helpers.api.debug('off')
   sub = Subnet("gall32", "0.0.0.0", "255.255.0.0", adom)
   sub2 = Subnet("gall32_2", "10.0.0.0", "255.0.0.0", adom)
+  sub3 = Subnet("gall32_3", "12.0.0.0", "255.0.0.0", adom)
   # sub.push_to_FMG()
 
   subnets = list()
   subnets.append(sub)
   subnets.append(sub2)
+  subnets.append(sub3)
 
   for s in subnets:
     s.push_to_FMG()
@@ -33,6 +35,8 @@ def main(argv):
 
   grp2 = Group("test_group_2")
   grp2.add_subnet(sub)
+  grp2.add_subnet(sub2)
+  grp2.add_subnet(sub3)
 
   groups = list()
   groups.append(grp)
