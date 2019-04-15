@@ -5,6 +5,7 @@ from ftntlib import FortiManagerJSON
 from .fmgobject import FMG_object
 
 class Group(FMG_object):
+  """Group object following FMG firewall object group"""
   def __init__(self, name, adom="global", ipv6=False):
     FMG_object.__init__(self, name, adom, ipv6)
     self.__subgrp = list()
@@ -17,8 +18,8 @@ class Group(FMG_object):
     url = urlpf + "/obj/firewall/addrgrp"
     if self.is_ipv6():
       url += "6"
-    member = list()
 
+    member = list()
     for sub in self.__subnets:
       member.append(sub.get_name())
     debug = "\n\tsubnets: " + str(member)
@@ -29,7 +30,7 @@ class Group(FMG_object):
     helpers.logger.debug(debug)
     obj = {
       'name': self.get_name(),
-      'comment': 'Created by efficientIP',
+      'comment': 'Created by EfficientIP',
       'color': 13,
       'member': member
       }
@@ -42,7 +43,6 @@ class Group(FMG_object):
     return code,data
 
   def _FMG_update(self):
-    # TODO: Idempotence
     helpers.logger.info("Updating group " + self.get_name() + " on FMG")
     urlpf = "pm/config/" + self.get_adom()
     url = urlpf + "/obj/firewall/addrgrp"
@@ -64,7 +64,8 @@ class Group(FMG_object):
 
     # Idempotence
     if self.get_data()['member'] == obj['member']:
-      return {'code': 0, 'message': 'No change made'}
+      return {'code': 1, 'message': 'No change made'}
+
     code, data = helpers.api.update(url, obj)
 
     if code['code'] != 0:
@@ -73,6 +74,7 @@ class Group(FMG_object):
     return code,data
 
   def FMG_delete(self):
+    """Delete group on the FMG"""
     helpers.logger.info("Deleting group " + self.get_name() + " on FMG")
     urlpf = "pm/config/" + self.get_adom()
     url = urlpf + '/obj/firewall/addrgrp'
@@ -87,9 +89,25 @@ class Group(FMG_object):
       raise RuntimeError(code['message'])
     return
 
-  def add_subnet(self, sub):
-    if type(sub) is not Subnet:
+  def add_member(self, m):
+    """Add a member to group (subnet or sub group)"""
+    if type(m) is Subnet:
+      self._add_subnet(m)
+    elif type(m) is Group:
+      self._add_subgrp(m)
+    else:
       raise Exception("parameter type error")
+
+  def del_member(self, m):
+    """Delete a member to group (subnet or sub group)"""
+    if type(m) is Subnet:
+      self._del_subnet(m)
+    elif type(m) is Group:
+      self._del_subgrp(m)
+    else:
+      raise Exception("parameter type error")
+
+  def _add_subnet(self, sub):
     if self.is_ipv6() != sub.is_ipv6():
       raise RuntimeError("Error IP version")
     if sub in self.__subnets:
@@ -99,7 +117,7 @@ class Group(FMG_object):
     self.__subnets.append(sub)
     return
 
-  def del_subnet(self, sub):
+  def _del_subnet(self, sub):
     try:
       helpers.logger.debug("Remove " + sub.get_name() + " subnet from group " + self.get_name())
       self.__subnets.remove(sub)
@@ -107,9 +125,7 @@ class Group(FMG_object):
       pass
     return
 
-  def add_subgrp(self, grp):
-    if type(grp) is not Group:
-      raise Exception("parameter type error")
+  def _add_subgrp(self, grp):
     if self.is_ipv6() != grp.is_ipv6():
       raise RuntimeError("Error IP version")
     if grp in self.__subgrp:
@@ -119,7 +135,7 @@ class Group(FMG_object):
     self.__subgrp.append(grp)
     return
 
-  def del_subgrp(self, grp):
+  def _del_subgrp(self, grp):
     try:
       helpers.logger.debug("Remove " + grp.get_name() + " subgroup from group " + self.get_name())
       self.__subgrp.remove(grp)

@@ -40,7 +40,7 @@ class BasicTestSuite(unittest.TestCase):
     """Push a group an FMG with subnet not push on the FMG"""
     sub = Subnet("gall32", "0.0.0.0", "255.255.0.0", context.adom)
     grp = Group("test_group")
-    grp.add_subnet(sub)
+    grp.add_member(sub)
     with self.assertRaises(RuntimeError):
       grp.push_to_FMG()
 
@@ -49,7 +49,7 @@ class BasicTestSuite(unittest.TestCase):
     sub = Subnet("gall32_v6", "fe80::1", "128", context.adom, ipv6=True)
     grp = Group("test_group")
     with self.assertRaises(RuntimeError):
-      grp.add_subnet(sub)
+      grp.add_member(sub)
 
   def test_end(self):
     """Logout from FMG"""
