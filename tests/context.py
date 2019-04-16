@@ -2,9 +2,9 @@
 
 from connector import helpers
 
-ip_FMG = "10.10.20.254"
+ip_FMG = "100.68.99.10"
 user ='admin'
-passwd ='AdminFMG'
+passwd ='fortinet'
 adom = "global"
 helpers.api.login(ip_FMG, user, passwd)
 helpers.api.debug('off')

@@ -3,8 +3,16 @@ from . import helpers
 from ftntlib import FortiManagerJSON
 
 class FMG_object:
-  def __init__(self, name, adom="global", ipv6=False):
-    self.__name = name
+
+  __id = None
+  __name = None
+  __adom = None
+  __ipv6 = None
+  __data = None
+
+  def __init__(self, name, adom="global", ipv6=False, _id=0):
+    self.__id = _id
+    self.__name = str(_id) + '-' + name
     if adom == "global":
       self.__adom = adom
     else:
@@ -29,6 +37,9 @@ class FMG_object:
 
   def FMG_delete(self):
     pass
+
+  def get_id(self):
+    return self.__id
 
   def get_name(self):
     return self.__name

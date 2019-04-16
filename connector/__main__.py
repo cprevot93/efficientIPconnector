@@ -1,47 +1,40 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
+import json
 from .subnet import Subnet
 from .group import Group
 from . import helpers
+import SOLIDserverRest
 
 # if len(sys.argv) < 2:
 #   print('Usage: ' + sys.argv[0] + 'IP <JSON API URL>')
 #   exit(1)
 
 def main(argv):
-  ip_FMG = "10.10.20.254" 
+  ip_FMG = "100.68.99.10"
+  ip_SOLIDserver = "100.68.99.20"
   user ='admin'
-  passwd ='AdminFMG'
-  adom = "global"
+  passwd ='fortinet'
+  adom = "root"
   helpers.api.login(ip_FMG, user, passwd)
   helpers.api.debug('off')
-  sub = Subnet("gall32", "0.0.0.0", "255.255.0.0", adom)
-  sub2 = Subnet("gall32_2", "10.0.0.0", "255.0.0.0", adom)
-  sub3 = Subnet("gall32_3", "fe80::1", "128", adom, ipv6=True)
-  # sub.push_to_FMG()
+
+  con = SOLIDserverRest.SOLIDserverRest(ip_SOLIDserver)
+  con.use_native_ssd(user="ipmadmin", password="admin")
+  rest_answer = con.query("ip_subnet_list", "", ssl_verify=False)
+  blocks = json.loads(rest_answer.content.decode())
 
   subnets = list()
-  subnets.append(sub)
-  subnets.append(sub2)
-  subnets.append(sub3)
-
-  grp = Group("test_group", adom)
-  grp.add_member(sub)
-  grp.add_member(sub2)
-
-  grp2 = Group("test_group_2", adom)
-  grp2.add_member(sub)
-  grp2.add_member(sub2)
-
   groups = list()
-  groups.append(grp)
-  groups.append(grp2)
+  for block in blocks:
+    sub = Subnet(block['subnet_name'], block['start_hostaddr'], helpers.MAP_NETMASK_v4[block['subnet_size']], adom, _id=block['subnet_id'])
+    subnets.append(sub)
 
   for s in subnets:
     s.push_to_FMG()
-  for g in groups:
-    g.push_to_FMG()
+  # for g in groups:
+  #   g.push_to_FMG()
 
   helpers.api.logout()
 

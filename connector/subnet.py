@@ -5,8 +5,8 @@ from .fmgobject import FMG_object
 
 class Subnet(FMG_object):
   """Subnet object following FMG firewall object address"""
-  def __init__(self, name, subnet, netmask, adom, ipv6=False):
-    FMG_object.__init__(self, name, adom, ipv6)
+  def __init__(self, name, subnet, netmask, adom, ipv6=False, _id=0):
+    FMG_object.__init__(self, name, adom, ipv6, _id)
     self.__netmask = netmask
     self.__subnet = subnet
 

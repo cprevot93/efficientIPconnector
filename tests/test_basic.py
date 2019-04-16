@@ -39,10 +39,42 @@ class BasicTestSuite(unittest.TestCase):
   def test_subnet_in_group_not_push(self):
     """Push a group an FMG with subnet not push on the FMG"""
     sub = Subnet("gall32", "0.0.0.0", "255.255.0.0", context.adom)
-    grp = Group("test_group")
+    grp = Group("test_group", context.adom)
     grp.add_member(sub)
     with self.assertRaises(RuntimeError):
       grp.push_to_FMG()
+
+  def test_subnet_and_group_create_and_push(self):
+    """Push a group an FMG with subnet not push on the FMG"""
+    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    sub = Subnet(random_str, "0.0.0.0", "255.255.0.0", context.adom)
+    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    sub2 = Subnet(random_str, "10.0.0.0", "255.0.0.0", context.adom)
+    # sub.push_to_FMG()
+
+    subnets = list()
+    subnets.append(sub)
+    subnets.append(sub2)
+
+    grp = Group("test_group", context.adom)
+    grp.add_member(sub)
+    grp.add_member(sub2)
+
+    grp2 = Group("test_group_2", context.adom)
+    grp2.add_member(sub)
+
+    groups = list()
+    groups.append(grp)
+    groups.append(grp2)
+
+    for s in subnets:
+      s.push_to_FMG()
+    for g in groups:
+      g.push_to_FMG()
+    for s in subnets:
+      s.delete_FMG()
+    for g in groups:
+      g.delete_FMG()
 
   def test_subnet_ipv6_in_grp_ivp4(self):
     """Try to push a IPV6 in a IPV4 group"""

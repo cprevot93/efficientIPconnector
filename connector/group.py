@@ -6,8 +6,8 @@ from .fmgobject import FMG_object
 
 class Group(FMG_object):
   """Group object following FMG firewall object group"""
-  def __init__(self, name, adom="global", ipv6=False):
-    FMG_object.__init__(self, name, adom, ipv6)
+  def __init__(self, name, adom="global", ipv6=False, _id=0):
+    FMG_object.__init__(self, name, adom, ipv6, _id)
     self.__subgrp = list()
     self.__subnets = list()
     self.__member = list()
