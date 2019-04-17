@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import time
 import random
 import string
 import sys
@@ -17,12 +18,11 @@ class BasicTestSuite(unittest.TestCase):
     random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     sub = Subnet(random_str, "0.0.0.0", "255.255.0.0", context.adom)
     sub.push_to_FMG()
-    sub.push_to_FMG()
-    code,data = helpers.firewall_table(context.adom, random_str)
-    self.assertTrue(code['code'] == 0)
-    sub.FMG_delete()
-    code,data = helpers.firewall_table(context.adom, random_str)
-    self.assertTrue(code['code'] != 0)
+    code,data = sub.push_to_FMG()
+    self.assertTrue(code['code'] == 1)
+    self.assertTrue(sub.FMG_delete())
+    code,data = helpers.firewall_table(context.adom, sub.get_FMG_name())
+    self.assertTrue(code['code'] == -6)
 
   def test_add_new_ipv6_subnet_update_and_delete(self):
     """Add a new IPV6 subnet, update and delete it"""
@@ -30,11 +30,11 @@ class BasicTestSuite(unittest.TestCase):
     sub = Subnet(random_str, "fe80::1", "128", context.adom, ipv6=True)
     sub.push_to_FMG()
     sub.push_to_FMG()
-    code,data = helpers.firewall_table(context.adom, random_str, ipv6=True)
+    code,data = helpers.firewall_table(context.adom, sub.get_FMG_name(), ipv6=True)
     self.assertTrue(code['code'] == 0)
     sub.FMG_delete()
-    code,data = helpers.firewall_table(context.adom, random_str, ipv6=True)
-    self.assertTrue(code['code'] != 0)
+    code,data = helpers.firewall_table(context.adom, sub.get_FMG_name(), ipv6=True)
+    self.assertTrue(code['code'] == -6)
 
   def test_subnet_in_group_not_push(self):
     """Push a group an FMG with subnet not push on the FMG"""
@@ -71,10 +71,10 @@ class BasicTestSuite(unittest.TestCase):
       s.push_to_FMG()
     for g in groups:
       g.push_to_FMG()
-    for s in subnets:
-      s.delete_FMG()
     for g in groups:
-      g.delete_FMG()
+      g.FMG_delete()
+    for s in subnets:
+      s.FMG_delete()
 
   def test_subnet_ipv6_in_grp_ivp4(self):
     """Try to push a IPV6 in a IPV4 group"""

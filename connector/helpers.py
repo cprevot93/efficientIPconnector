@@ -4,7 +4,7 @@ import sys
 from ftntlib import FortiManagerJSON
 
 api = FortiManagerJSON()
-# logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logger = logging.getLogger()
 
 MAP_NETMASK_v4 = {
@@ -50,6 +50,7 @@ def firewall_table(adom, address="", ipv6=False):
   if ipv6:
     url = "/pm/config/" + adom + "/obj/firewall/address6/" + address
 
+  logger.debug("URL: " + url)
   status, data = api.get(url)
   logger.info("status: " + str(status))
 
@@ -63,6 +64,7 @@ def group_table(adom, group="", ipv6=False):
   if ipv6:
     url = "/pm/config/" + adom + "/obj/firewall/addrgrp6/" + group
 
+  logger.debug("URL: " + url)
   status, data = api.get(url)
   logger.info("status: " + str(status))
 

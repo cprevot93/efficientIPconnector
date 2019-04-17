@@ -55,10 +55,10 @@ class Subnet(FMG_object):
     code = {'code': 1, 'message': 'No change made'}
     if self.is_ipv6():
       if self.get_data()['ip6'] == obj['ip6']:
-        return code
+        return code, None
     else:
       if self.get_data()['subnet'] == obj['subnet']:
-        return code
+        return code, None
 
     code, data = helpers.api.update(url, obj)
 

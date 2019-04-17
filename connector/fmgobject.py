@@ -25,26 +25,28 @@ class FMG_object:
   def push_to_FMG(self):
     try:
       if self._is_new():
-        helpers.logger.info(self._FMG_create())
+        code, data = self._FMG_create()
       else:
-        helpers.logger.info(self._FMG_update())
+        code, data = self._FMG_update()
+      helpers.logger.debug(code, data)
+      return code, data
     except RuntimeError as e:
       raise e
 
   def _FMG_create(self):
-    pass
+    return None, None
 
   def _FMG_update(self):
-    pass
+    return None, None
 
-  def FMG_delete(self):
-    pass
+  def _FMG_delete(self):
+    return False
 
   def get_id(self):
     return self.__id
 
   def get_FMG_name(self):
-    return self.__id + '-' + self.__name
+    return str(self.__id) + '-' + self.__name
 
   def get_name(self):
     return self.__name
