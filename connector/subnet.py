@@ -5,6 +5,10 @@ from .fmgobject import FMG_object
 
 class Subnet(FMG_object):
   """Subnet object following FMG firewall object address"""
+
+  __netmask = None
+  __subnet = None
+
   def __init__(self, name, subnet, netmask, adom, ipv6=False, _id=0, parent=None):
     FMG_object.__init__(self, name, adom, ipv6, _id, parent)
     self.__netmask = netmask
@@ -30,7 +34,6 @@ class Subnet(FMG_object):
 
     helpers.logger.debug("URL: " + url)
     code, data = helpers.api.add(url, obj)
-
     if code['code'] != 0:
       raise RuntimeError(code['message'])
 
@@ -52,6 +55,7 @@ class Subnet(FMG_object):
     helpers.logger.debug("URL: " + url)
 
     # Idempotence
+    # _FMG_update is called in _is_net, so get_data is updated with the call firewall_table
     code = {'code': 1, 'message': 'No change made'}
     if self.is_ipv6():
       if self.get_data()['ip6'] == obj['ip6']:
@@ -61,24 +65,11 @@ class Subnet(FMG_object):
         return code, None
 
     code, data = helpers.api.update(url, obj)
-
     if code['code'] != 0:
       raise RuntimeError(code['message'])
 
     return code,data
 
-  def FMG_delete(self):
-    """Delete subnet on the FMG"""
-    helpers.logger.info("Deleting subnet " + self.get_FMG_name() + " on FMG")
-    urlpf = "pm/config/" + self.get_adom()
-    if self.is_ipv6():
-      code, data = helpers.api.delete(urlpf + '/obj/firewall/address6/' + self.get_FMG_name())
-    else:
-      code, data = helpers.api.delete(urlpf + '/obj/firewall/address/' + self.get_FMG_name())
-
-    if code['code'] != 0:
-      raise RuntimeError(code['message'])
-    return True
 
   def _is_new(self):
     status,data = helpers.firewall_table(self.get_adom(), self.get_FMG_name(), self.is_ipv6())
@@ -87,3 +78,6 @@ class Subnet(FMG_object):
       return False
     else:
       return True
+
+  def get_subnet(self):
+    return self.__subnet

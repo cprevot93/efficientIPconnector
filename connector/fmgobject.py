@@ -28,10 +28,27 @@ class FMG_object:
         code, data = self._FMG_create()
       else:
         code, data = self._FMG_update()
-      helpers.logger.debug(code, data)
+      helpers.logger.debug(code)
+      if data:
+        helpers.logger.debug(data)
       return code, data
     except RuntimeError as e:
       raise e
+
+  def FMG_delete(self, _type="address"):
+    """Delete object on the FMG"""
+    helpers.logger.info("Deleting " + _type + ' ' +  self.get_FMG_name() + " on FMG")
+    url = "pm/config/" + self.get_adom() + '/obj/firewall/' + _type
+    if self.is_ipv6():
+      url += '6'
+    url += '/' + self.get_FMG_name()
+
+    code, data = helpers.api.delete(url)
+    helpers.logger.debug(code)
+    if code['code'] != 0:
+      raise RuntimeError(code['message'])
+    return True
+
 
   def _FMG_create(self):
     return None, None

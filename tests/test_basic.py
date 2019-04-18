@@ -4,11 +4,13 @@ import unittest
 import time
 import random
 import string
+import SOLIDserverRest
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from connector import Subnet,Group,helpers
+from connector import Subnet,Group,helpers,Address,Pool
 from tests import context
+import json
 
 class BasicTestSuite(unittest.TestCase):
   """Basic test cases."""
@@ -29,10 +31,9 @@ class BasicTestSuite(unittest.TestCase):
     random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     sub = Subnet(random_str, "fe80::1", "128", context.adom, ipv6=True)
     sub.push_to_FMG()
-    sub.push_to_FMG()
-    code,data = helpers.firewall_table(context.adom, sub.get_FMG_name(), ipv6=True)
-    self.assertTrue(code['code'] == 0)
-    sub.FMG_delete()
+    code, data = sub.push_to_FMG()
+    self.assertTrue(code['code'] == 1)
+    self.assertTrue(sub.FMG_delete())
     code,data = helpers.firewall_table(context.adom, sub.get_FMG_name(), ipv6=True)
     self.assertTrue(code['code'] == -6)
 
@@ -71,10 +72,11 @@ class BasicTestSuite(unittest.TestCase):
       s.push_to_FMG()
     for g in groups:
       g.push_to_FMG()
+    time.sleep(0.2)
     for g in groups:
-      g.FMG_delete()
+      self.assertTrue(g.FMG_delete())
     for s in subnets:
-      s.FMG_delete()
+      self.assertTrue(s.FMG_delete())
 
   def test_subnet_ipv6_in_grp_ivp4(self):
     """Try to push a IPV6 in a IPV4 group"""
@@ -83,9 +85,47 @@ class BasicTestSuite(unittest.TestCase):
     with self.assertRaises(RuntimeError):
       grp.add_member(sub)
 
-  def test_end(self):
-    """Logout from FMG"""
-    helpers.api.logout()
+  def test_get_ipam_address(self):
+    con = SOLIDserverRest.SOLIDserverRest(context.ip_SOLIDserver)
+    con.use_native_ssd(user=context.ipam_user, password=context.ipam_passwd)
+    rest_answer = con.query("ip_address_list", "", ssl_verify=False)
+    if rest_answer.content is not None:
+      addr_json = json.loads(rest_answer.content.decode())
+    addresses = list()
+    for addr in addr_json:
+      if addr['type'] != 'ip':
+        continue
+      helpers.logger.debug(json.dumps(addr, indent=2))
+      addresses.append(Address(addr['name'], addr['hostaddr'], context.adom, _id=addr['ip_id'], parent=addr['subnet_name'] + '_' + addr['parent_subnet_name']))
+    for a in addresses:
+      a.push_to_FMG()
+    for a in addresses:
+      code, data = a.push_to_FMG()
+      self.assertTrue(code['code'] == 1)
+      self.assertTrue(a.FMG_delete())
+      code,data = helpers.firewall_table(context.adom, a.get_FMG_name())
+      self.assertTrue(code['code'] == -6)
+
+  def test_get_ipam_pool(self):
+    con = SOLIDserverRest.SOLIDserverRest(context.ip_SOLIDserver)
+    con.use_native_ssd(user=context.ipam_user, password=context.ipam_passwd)
+    rest_answer = con.query("ip_pool_list", "", ssl_verify=False)
+    if rest_answer.content is not None:
+      pool_json = json.loads(rest_answer.content.decode())
+    pools = list()
+    for pool in pool_json:
+      # if pool['type'] != 'pool':
+      #   continue
+      helpers.logger.debug(json.dumps(pool, indent=2))
+      pools.append(Pool(pool['pool_name'], pool['start_hostaddr'], pool['end_hostaddr'], context.adom, _id=pool['pool_id'], parent=pool['subnet_name'] + '_' + pool['parent_subnet_name']))
+    for p in pools:
+      p.push_to_FMG()
+    for p in pools:
+      code, data = p.push_to_FMG()
+      self.assertTrue(code['code'] == 1)
+      self.assertTrue(p.FMG_delete())
+      code,data = helpers.firewall_table(context.adom, p.get_FMG_name())
+      self.assertTrue(code['code'] == -6)
 
 if __name__ == '__main__':
   unittest.main()

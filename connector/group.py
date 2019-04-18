@@ -36,7 +36,6 @@ class Group(FMG_object):
       }
     helpers.logger.debug("URL: " + url)
     code, data = helpers.api.add(url, obj)
-
     if code['code'] != 0:
       raise RuntimeError(code['message'])
 
@@ -67,7 +66,6 @@ class Group(FMG_object):
       return {'code': 1, 'message': 'No change made'}
 
     code, data = helpers.api.update(url, obj)
-
     if code['code'] != 0:
       raise RuntimeError(code['message'])
 
@@ -75,19 +73,7 @@ class Group(FMG_object):
 
   def FMG_delete(self):
     """Delete group on the FMG"""
-    helpers.logger.info("Deleting group " + self.get_FMG_name() + " on FMG")
-    urlpf = "pm/config/" + self.get_adom()
-    url = urlpf + '/obj/firewall/addrgrp'
-    if self.is_ipv6():
-      url += "6"
-    
-    url += "/" + self.get_FMG_name()
-    helpers.logger.debug("URL: " + url)
-    code, data = helpers.api.delete(url)
-
-    if code['code'] != 0:
-      raise RuntimeError(code['message'])
-    return
+    return super(Group, self).FMG_delete(_type="addrgrp")
 
   def add_member(self, m):
     """Add a member to group (subnet or sub group)"""
