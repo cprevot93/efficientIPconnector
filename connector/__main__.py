@@ -5,6 +5,7 @@ import json
 from .subnet import Subnet
 from .group import Group
 from .address import Address
+from .pool import Pool
 from . import helpers
 import SOLIDserverRest
 
@@ -28,6 +29,7 @@ def main(argv):
 
   sync_subnet_group(con, adom)
   sync_addr(con, adom)
+  sync_pool(con, adom)
   helpers.api.logout()
 
   return 0
@@ -108,6 +110,17 @@ def sync_addr(con, adom):
     a.push_to_FMG()
   for a in addresses:
     code, data = a.push_to_FMG()
+
+def sync_pool(con, adom):
+  rest_answer = con.query("ip_pool_list", "", ssl_verify=False)
+  if rest_answer.content is not None:
+    pool_json = json.loads(rest_answer.content.decode())
+  pools = list()
+  for pool in pool_json:
+    helpers.logger.debug(json.dumps(pool, indent=2))
+    pools.append(Pool(pool['pool_name'], pool['start_hostaddr'], pool['end_hostaddr'], adom, _id=pool['pool_id'], parent=pool['subnet_name'] + '_' + pool['parent_subnet_name']))
+  for p in pools:
+    code, data = p.push_to_FMG()
 
 
 if __name__ == "__main__":

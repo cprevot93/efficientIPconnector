@@ -45,6 +45,9 @@ class FMG_object:
 
     code, data = helpers.api.delete(url)
     helpers.logger.debug(code)
+    # object firewall is been used
+    if code['code'] == -10015:
+      return False
     if code['code'] != 0:
       raise RuntimeError(code['message'])
     return True

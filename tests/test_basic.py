@@ -114,8 +114,6 @@ class BasicTestSuite(unittest.TestCase):
       pool_json = json.loads(rest_answer.content.decode())
     pools = list()
     for pool in pool_json:
-      # if pool['type'] != 'pool':
-      #   continue
       helpers.logger.debug(json.dumps(pool, indent=2))
       pools.append(Pool(pool['pool_name'], pool['start_hostaddr'], pool['end_hostaddr'], context.adom, _id=pool['pool_id'], parent=pool['subnet_name'] + '_' + pool['parent_subnet_name']))
     for p in pools:
