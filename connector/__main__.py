@@ -9,18 +9,18 @@ from .pool import Pool
 from . import helpers
 import SOLIDserverRest
 
-# if len(sys.argv) < 2:
-#   print('Usage: ' + sys.argv[0] + 'IP <JSON API URL>')
-#   exit(1)
+if len(sys.argv) < 8:
+  print('Usage: connector IP_FMG IP_SOLIDserver adom fmg_user fmg_passwd ipam_user ipam_passwd')
+  exit(1)
 
 def main(argv):
-  ip_FMG = "100.68.99.10"
-  ip_SOLIDserver = "100.68.99.20"
-  fmg_user ='admin'
-  fmg_passwd ='fortinet'
-  adom = "root"
-  ipam_user = "ipmadmin"
-  ipam_passwd = "admin"
+  ip_FMG = sys.argv[1]
+  ip_SOLIDserver = sys.argv[2]
+  adom = sys.argv[3]
+  fmg_user = sys.argv[4] 
+  fmg_passwd = sys.argv[5]
+  ipam_user = sys.argv[6]
+  ipam_passwd = sys.argv[7]
   helpers.api.login(ip_FMG, fmg_user, fmg_passwd)
   helpers.api.debug('off')
 
