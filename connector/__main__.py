@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import json
+import time
 from .subnet import Subnet
 from .group import Group
 from .address import Address
@@ -13,6 +14,11 @@ if len(sys.argv) < 8:
   print('Usage: connector IP_FMG IP_SOLIDserver adom fmg_user fmg_passwd ipam_user ipam_passwd')
   exit(1)
 
+addresses = list()
+pools = list()
+subnets = list()
+groups = list()
+
 def main(argv):
   ip_FMG = sys.argv[1]
   ip_SOLIDserver = sys.argv[2]
@@ -21,21 +27,22 @@ def main(argv):
   fmg_passwd = sys.argv[5]
   ipam_user = sys.argv[6]
   ipam_passwd = sys.argv[7]
-  helpers.api.login(ip_FMG, fmg_user, fmg_passwd)
   helpers.api.debug('off')
 
-  con = SOLIDserverRest.SOLIDserverRest(ip_SOLIDserver)
-  con.use_native_ssd(user=ipam_user, password=ipam_passwd)
-
-  sync_subnet_group(con, adom)
-  sync_addr(con, adom)
-  sync_pool(con, adom)
-  helpers.api.logout()
+  while True:
+    helpers.api.login(ip_FMG, fmg_user, fmg_passwd)
+    con = SOLIDserverRest.SOLIDserverRest(ip_SOLIDserver)
+    con.use_native_ssd(user=ipam_user, password=ipam_passwd)
+    # sync_subnet_group(con, adom, subnet, group)
+    sync_addr(con, adom, True)
+    sync_pool(con, adom, True)
+    helpers.api.logout()
+    time.sleep(15)
 
   return 0
 
 
-def sync_subnet_group(con, adom):
+def sync_subnet_group(con, adom, delete):
   rest_answer = con.query("ip_subnet_list", "", ssl_verify=False)
   if rest_answer.content is not None:
     blocks_v4 = json.loads(rest_answer.content.decode())
@@ -43,9 +50,6 @@ def sync_subnet_group(con, adom):
   rest_answer = con.query("ip_subnet6_list", "", ssl_verify=False)
   if rest_answer.content is not None:
     blocks_v6 = json.loads(rest_answer.content.decode())
-
-  subnets = list()
-  groups = list()
 
   def loop(blocks, v6):
     if blocks is None:
@@ -85,42 +89,75 @@ def sync_subnet_group(con, adom):
 
   return 0
 
-def sync_addr(con, adom):
+def sync_addr(con, adom, delete):
+  """Sync address object from SOLIDserver to FMG"""
+  # fetch address from SOLIDserver
   rest_answer = con.query("ip_address_list", "", ssl_verify=False)
   if rest_answer.content is not None:
     addr_json = json.loads(rest_answer.content.decode())
-
   rest_answer = con.query("ip_address6_list", "", ssl_verify=False)
   if rest_answer.content is not None:
     addr6_json = json.loads(rest_answer.content.decode())
+  helpers.logger.debug(json.dumps(addr_json, indent=2))
+  helpers.logger.debug(json.dumps(addr6_json, indent=2))
 
-  addresses = list()
+  # old state on FMG
+  global addresses
+  current_addr = list()
 
   for a in addr_json:
     if a['type'] != 'ip':
       continue
-    helpers.logger.debug(json.dumps(a, indent=2))
-    addresses.append(Address(a['name'], a['hostaddr'], adom, _id=a['ip_id'], parent=a['subnet_name'] + '_' + a['parent_subnet_name']))
+    current_addr.append(Address(a['name'], a['hostaddr'], adom, _id=a['ip_id'], parent=a['subnet_name'] + '_' + a['parent_subnet_name']))
+
   for a in addr6_json:
     if a['type'] != 'ip6':
       continue
-    helpers.logger.debug(json.dumps(a, indent=2))
-    addresses.append(Address(a['ip6_name'], a['hostaddr'], adom, ipv6=True, _id=a['ip6_id'], parent=a['subnet6_name'] + '_' + a['parent_subnet6_name']))
-  for a in addresses:
-    a.push_to_FMG()
-  for a in addresses:
-    code, data = a.push_to_FMG()
+    current_addr.append(Address(a['ip6_name'], a['hostaddr'], adom, ipv6=True, _id=a['ip6_id'], parent=a['subnet6_name'] + '_' + a['parent_subnet6_name']))
 
-def sync_pool(con, adom):
+  for a in current_addr:
+    for x in addresses:
+      # push current SOLIDserver state to FMG with new subnet and update
+      code, data = a.push_to_FMG()
+      if a.get_FMG_name() == x.get_FMG_name():
+        # remove pushed subnet from old state
+        addresses.remove(x)
+
+  # addresses contains only deleted object from the last SOLIDserver state
+  if delete: # delete option
+    for a in addresses:
+      a.FMG_delete()
+  # save current state on FMG for next call
+  addresses = current_addr
+
+
+def sync_pool(con, adom, delete):
+  """Sync pool object from SOLIDserver to FMG"""
+  # fetch data from SOLIDserver
   rest_answer = con.query("ip_pool_list", "", ssl_verify=False)
   if rest_answer.content is not None:
     pool_json = json.loads(rest_answer.content.decode())
-  pools = list()
+  
+  global pools
+  current_pool = list()
+
   for pool in pool_json:
     helpers.logger.debug(json.dumps(pool, indent=2))
-    pools.append(Pool(pool['pool_name'], pool['start_hostaddr'], pool['end_hostaddr'], adom, _id=pool['pool_id'], parent=pool['subnet_name'] + '_' + pool['parent_subnet_name']))
-  for p in pools:
-    code, data = p.push_to_FMG()
+    current_pool.append(Pool(pool['pool_name'], pool['start_hostaddr'], pool['end_hostaddr'], adom, _id=pool['pool_id'], parent=pool['subnet_name'] + '_' + pool['parent_subnet_name']))
+  for p in current_pool:
+    for x in pools:
+      # push current state on FMG with new pools and update
+      code, data = p.push_to_FMG()
+      if p.get_FMG_name() == x.get_FMG_name():
+        # remove pushed pools from old state
+        pools.remove(x)
+
+  # delete old object if option delete true
+  if delete:
+    for p in pools:
+      p.FMG_delete()
+  # save current state on FMG for next call
+  pools = current_pool
 
 
 if __name__ == "__main__":

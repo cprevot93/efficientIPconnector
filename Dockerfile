@@ -1,4 +1,8 @@
 FROM python:3
+LABEL author="Charles Prevot"
+LABEL maintainer="cprevot@fortinet.com"
+LABEL version="0.1"
+
 ENV lib ftntlib-0.4.0.dev13
 
 ARG IP_FMG=100.68.99.10
