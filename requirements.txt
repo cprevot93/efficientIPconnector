@@ -3,3 +3,4 @@ suds-jurko
 lxml
 nose
 sphinx
+SOLIDserverRest
