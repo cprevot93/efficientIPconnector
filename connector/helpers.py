@@ -1,10 +1,14 @@
+#
+# Author: Charles Prevot - Fortinet
+# Date: 04/2019
+#
 import logging
 import json
 import sys
 from ftntlib import FortiManagerJSON
 
 api = FortiManagerJSON()
-logging.basicConfig(stream=sys.stderr, level=None)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logger = logging.getLogger()
 
 MAP_NETMASK_v4 = {

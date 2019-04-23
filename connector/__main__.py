@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#
+# Author: Charles Prevot - Fortinet
+# Date: 04/2019
+#
+
 import sys
 import json
 import time
@@ -12,7 +17,7 @@ from . import helpers
 import SOLIDserverRest
 
 if len(sys.argv) < 9:
-  print('Usage: connector IP_FMG IP_SOLIDserver adom fmg_user fmg_passwd ipam_user ipam_passwd')
+  print('Usage: connector IP_FMG IP_SOLIDserver adom fmg_user fmg_passwd ipam_user ipam_passwd sync_delete timer_refresh')
   exit(1)
 
 addresses = list()
@@ -43,7 +48,7 @@ def main(argv):
     sync_addr(con, adom, sync_delete)
     sync_pool(con, adom, sync_delete)
     helpers.api.logout()
-    time.sleep(time)
+    time.sleep(time_refresh)
 
   return 0
 
@@ -99,11 +104,11 @@ def sync_FMG(ip_FMG, fmg_user, fmg_passwd, adom):
 
 def sync_subnet_group(con, adom, delete):
   rest_answer = con.query("ip_subnet_list", "", ssl_verify=False)
-  if rest_answer.content is not None:
+  if rest_answer.status_code == 200 and rest_answer.content is not None:
     blocks_v4 = json.loads(rest_answer.content.decode())
 
   rest_answer = con.query("ip_subnet6_list", "", ssl_verify=False)
-  if rest_answer.content is not None:
+  if rest_answer.status_code == 200 and rest_answer.content is not None:
     blocks_v6 = json.loads(rest_answer.content.decode())
 
   global subnets
@@ -171,10 +176,10 @@ def sync_addr(con, adom, delete):
   """Sync address object from SOLIDserver to FMG"""
   # fetch address from SOLIDserver
   rest_answer = con.query("ip_address_list", "", ssl_verify=False)
-  if rest_answer.content is not None:
+  if rest_answer.status_code == 200 and rest_answer.content is not None:
     addr_json = json.loads(rest_answer.content.decode())
   rest_answer = con.query("ip_address6_list", "", ssl_verify=False)
-  if rest_answer.content is not None:
+  if rest_answer.status_code == 200 and rest_answer.content is not None:
     addr6_json = json.loads(rest_answer.content.decode())
   helpers.logger.debug(json.dumps(addr_json, indent=2))
   helpers.logger.debug(json.dumps(addr6_json, indent=2))
@@ -208,12 +213,16 @@ def sync_addr(con, adom, delete):
   # save current state on FMG for next call
   addresses = current_addr
 
+  return 0
+
 def sync_pool(con, adom, delete):
   """Sync pool object from SOLIDserver to FMG"""
   # fetch data from SOLIDserver
   rest_answer = con.query("ip_pool_list", "", ssl_verify=False)
-  if rest_answer.content is not None:
+  if rest_answer.status_code == 200 and rest_answer.content is not None:
     pool_json = json.loads(rest_answer.content.decode())
+  else:
+    return 1
   
   global pools
   current_pool = list()
@@ -236,6 +245,7 @@ def sync_pool(con, adom, delete):
   # save current state on FMG for next call
   pools = current_pool
 
+  return 0
 
 if __name__ == "__main__":
   main(sys.argv)
