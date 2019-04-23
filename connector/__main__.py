@@ -3,6 +3,7 @@
 import sys
 import json
 import time
+import re
 from .subnet import Subnet
 from .group import Group
 from .address import Address
@@ -29,6 +30,8 @@ def main(argv):
   ipam_passwd = sys.argv[7]
   helpers.api.debug('off')
 
+  sync_FMG(ip_FMG, fmg_user, fmg_passwd, adom)
+
   while True:
     helpers.api.login(ip_FMG, fmg_user, fmg_passwd)
     con = SOLIDserverRest.SOLIDserverRest(ip_SOLIDserver)
@@ -41,6 +44,55 @@ def main(argv):
 
   return 0
 
+
+def sync_FMG(ip_FMG, fmg_user, fmg_passwd, adom):
+  """Sync state of FMG at the beginning of the program.
+  It will filter subnets and pool with the comment param in FMG"""
+
+  global subnets
+  global pools
+  global groups
+  global addresses
+
+  def subnets_pools(ipv6):
+    status, data = helpers.firewall_table("adom/" + adom, ipv6=ipv6)
+    for d in data:
+      if 'comment' in d and d['comment'] == "Created by EfficientIP":
+        helpers.logger.debug(json.dumps(d, indent=2))
+        m = re.split('[_|-]', d['name'])
+        if d['type'] == 0:
+          if ipv6:
+            ip = re.split('[/]', d['ip6'])
+            if ip[1] == '128':
+              addresses.append(Address(m[1], ip[0], adom, ipv6=ipv6, _id=int(m[0]), parent=m[2] + '_' + m[3]))
+            else:
+              subnets.append(Subnet(m[1], ip[0], ip[1], adom, ipv6=ipv6, _id=int(m[0]), parent=m[2]))
+          else:
+            if d['subnet'][1] == '255.255.255.255':
+              addresses.append(Address(m[1], d['subnet'][0], adom, ipv6=ipv6, _id=int(m[0]), parent=m[2] + '_' + m[3]))
+            else:
+              subnets.append(Subnet(m[1], d['subnet'][0], d['subnet'][1], adom, ipv6=ipv6, _id=int(m[0]), parent=m[2]))
+        elif d['type'] == 1:
+          pools.append(Pool(m[1], d['start-ip'], d['end-ip'], adom, ipv6=ipv6, _id=int(m[0]), parent=m[2] + '_' + m[3]))
+
+  def group(ipv6):
+    status, data = helpers.group_table("adom/" + adom, ipv6=ipv6)
+    for d in data:
+      if 'comment' in d and d['comment'] == "Created by EfficientIP":
+        helpers.logger.debug(json.dumps(d, indent=2))
+        m = re.split('[_|-]', d['name'])
+        g = Group(m[1], adom, ipv6=ipv6, _id=int(m[0]))
+        groups.append(g)
+
+  helpers.api.login(ip_FMG, fmg_user, fmg_passwd)
+  subnets_pools(False) # ipv4
+  subnets_pools(True) # ipv6
+  group(False) # ipv4
+  group(True) # ipv6
+  helpers.api.logout()
+  time.sleep(1)
+
+  return 0
 
 def sync_subnet_group(con, adom, delete):
   rest_answer = con.query("ip_subnet_list", "", ssl_verify=False)

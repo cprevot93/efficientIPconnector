@@ -19,6 +19,3 @@ class Address(Subnet):
       """Override the default Unequal behavior"""
       return self.get_FMG_name() != other.get_FMG_name() or self.get_adom() != other.get_adom() \
         or self.get_subnet() != other.get_subnet() or self.is_ipv6() != other.is_ipv6()
-
-  def get_FMG_name(self):
-    return str(self.get_id()) + '-' + self.get_name() + '_' + self.get_parent()
