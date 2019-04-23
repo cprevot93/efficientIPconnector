@@ -4,7 +4,7 @@ import sys
 from ftntlib import FortiManagerJSON
 
 api = FortiManagerJSON()
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stderr, level=None)
 logger = logging.getLogger()
 
 MAP_NETMASK_v4 = {

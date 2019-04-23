@@ -29,10 +29,13 @@ ENV IPAM_PASSWD=${ipam_passwd}
 ARG sync_delete=1
 ENV SYNC_DELETE=${sync_delete}
 
+ARG time_refresh=1
+ENV TIME_REFRESH=${time_refresh}
+
 WORKDIR /opt
 ADD requirements.txt .
 ADD connector/ connector
 ADD $lib/ $lib
 RUN pip install -r requirements.txt
 RUN cd ${lib} && python setup.py install
-CMD python -m connector ${IP_FMG} ${IP_SOLIDserver} ${ADOM} ${FMG_USER} ${FMG_PASSWD} ${IPAM_USER} ${IPAM_PASSWD} ${SYNC_DELETE}
+CMD python -m connector ${IP_FMG} ${IP_SOLIDserver} ${ADOM} ${FMG_USER} ${FMG_PASSWD} ${IPAM_USER} ${IPAM_PASSWD} ${SYNC_DELETE} ${TIME_REFRESH}

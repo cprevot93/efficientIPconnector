@@ -29,6 +29,7 @@ def main(argv):
   ipam_user = sys.argv[6]
   ipam_passwd = sys.argv[7]
   sync_delete = bool(int(sys.argv[8]))
+  time_refresh = int(sys.argv[8]) * 60 # timer refresh
   helpers.api.debug('off')
 
   sync_FMG(ip_FMG, fmg_user, fmg_passwd, adom)
@@ -42,7 +43,7 @@ def main(argv):
     sync_addr(con, adom, sync_delete)
     sync_pool(con, adom, sync_delete)
     helpers.api.logout()
-    time.sleep(15)
+    time.sleep(time)
 
   return 0
 
