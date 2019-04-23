@@ -34,6 +34,7 @@ def main(argv):
 
   while True:
     helpers.api.login(ip_FMG, fmg_user, fmg_passwd)
+    helpers.logger.info("Connecting to SOLIDserver @ " + ip_SOLIDserver + " with user: " + ipam_user + " pass: " + ipam_passwd)
     con = SOLIDserverRest.SOLIDserverRest(ip_SOLIDserver)
     con.use_native_ssd(user=ipam_user, password=ipam_passwd)
     sync_subnet_group(con, adom, True)

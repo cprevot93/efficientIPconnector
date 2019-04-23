@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.7.3
 LABEL author="Charles Prevot"
 LABEL maintainer="cprevot@fortinet.com"
 LABEL version="0.1"
