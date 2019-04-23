@@ -81,3 +81,6 @@ class Subnet(FMG_object):
 
   def get_subnet(self):
     return self.__subnet
+
+  def get_FMG_name(self):
+    return str(self.get_id()) + '-' + self.get_name() + '_' + self.get_parent()

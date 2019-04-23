@@ -33,7 +33,7 @@ def main(argv):
     helpers.api.login(ip_FMG, fmg_user, fmg_passwd)
     con = SOLIDserverRest.SOLIDserverRest(ip_SOLIDserver)
     con.use_native_ssd(user=ipam_user, password=ipam_passwd)
-    # sync_subnet_group(con, adom, subnet, group)
+    sync_subnet_group(con, adom, True)
     sync_addr(con, adom, True)
     sync_pool(con, adom, True)
     helpers.api.logout()
@@ -51,11 +51,19 @@ def sync_subnet_group(con, adom, delete):
   if rest_answer.content is not None:
     blocks_v6 = json.loads(rest_answer.content.decode())
 
+  global subnets
+  global groups
+  current_subnets = list()
+  current_groups = list()
+
   def loop(blocks, v6):
     if blocks is None:
       return
     _type = blocks[0]['type']
     for block in blocks:
+      helpers.logger.debug(json.dumps(block, indent=2))
+      if bool(int(block['is_in_orphan'])):
+        continue
       if v6:
         netmask = block[_type+'_prefix']
       else:
@@ -65,27 +73,42 @@ def sync_subnet_group(con, adom, delete):
       name = block[_type + '_name']
       _id = block[_type + '_id']
 
-      helpers.logger.debug(json.dumps(block, indent=2))
       if bool(int(block['is_terminal'])):
         sub = Subnet(name, block['start_hostaddr'], netmask, adom, ipv6=v6, _id=_id, parent=parent)
-        subnets.append(sub)
+        current_subnets.append(sub)
       else:
         grp = Group(name, adom, ipv6=v6, _id=_id, parent=parent)
-        groups.append(grp)
+        current_groups.append(grp)
 
   loop(blocks_v4, False)
   loop(blocks_v6, True)
 
-  for s in subnets:
-    for g in groups:
+  for s in current_subnets:
+    for g in current_groups:
       if g.get_name() == s.get_parent() and g.is_ipv6() == s.is_ipv6():
         g.add_member(s)
     s.push_to_FMG()
-  for g in groups:
-    for g2 in groups:
+    for x in subnets:
+      if s.get_FMG_name() == x.get_FMG_name():
+        subnets.remove(x)
+
+  for g in current_groups:
+    for g2 in current_groups:
       if g2.get_name() == g.get_parent() and g2.is_ipv6() == g.is_ipv6():
         g2.add_member(s)
     g.push_to_FMG()
+    for x in groups:
+      if g.get_FMG_name() == x.get_FMG_name():
+        groups.remove(x)
+
+  if delete:
+    for g in groups:
+      g.FMG_delete()
+    for s in subnets:
+      s.FMG_delete()
+
+  subnets = current_subnets
+  groups = current_groups
 
   return 0
 
@@ -116,9 +139,9 @@ def sync_addr(con, adom, delete):
     current_addr.append(Address(a['ip6_name'], a['hostaddr'], adom, ipv6=True, _id=a['ip6_id'], parent=a['subnet6_name'] + '_' + a['parent_subnet6_name']))
 
   for a in current_addr:
+    # push current SOLIDserver state to FMG with new subnet and update
+    a.push_to_FMG()
     for x in addresses:
-      # push current SOLIDserver state to FMG with new subnet and update
-      code, data = a.push_to_FMG()
       if a.get_FMG_name() == x.get_FMG_name():
         # remove pushed subnet from old state
         addresses.remove(x)
@@ -129,7 +152,6 @@ def sync_addr(con, adom, delete):
       a.FMG_delete()
   # save current state on FMG for next call
   addresses = current_addr
-
 
 def sync_pool(con, adom, delete):
   """Sync pool object from SOLIDserver to FMG"""
@@ -145,9 +167,9 @@ def sync_pool(con, adom, delete):
     helpers.logger.debug(json.dumps(pool, indent=2))
     current_pool.append(Pool(pool['pool_name'], pool['start_hostaddr'], pool['end_hostaddr'], adom, _id=pool['pool_id'], parent=pool['subnet_name'] + '_' + pool['parent_subnet_name']))
   for p in current_pool:
+    # push current state on FMG with new pools and update
+    p.push_to_FMG()
     for x in pools:
-      # push current state on FMG with new pools and update
-      code, data = p.push_to_FMG()
       if p.get_FMG_name() == x.get_FMG_name():
         # remove pushed pools from old state
         pools.remove(x)
