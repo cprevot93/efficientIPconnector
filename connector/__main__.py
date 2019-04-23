@@ -11,7 +11,7 @@ from .pool import Pool
 from . import helpers
 import SOLIDserverRest
 
-if len(sys.argv) < 8:
+if len(sys.argv) < 9:
   print('Usage: connector IP_FMG IP_SOLIDserver adom fmg_user fmg_passwd ipam_user ipam_passwd')
   exit(1)
 
@@ -28,6 +28,7 @@ def main(argv):
   fmg_passwd = sys.argv[5]
   ipam_user = sys.argv[6]
   ipam_passwd = sys.argv[7]
+  sync_delete = bool(int(sys.argv[8]))
   helpers.api.debug('off')
 
   sync_FMG(ip_FMG, fmg_user, fmg_passwd, adom)
@@ -37,9 +38,9 @@ def main(argv):
     helpers.logger.info("Connecting to SOLIDserver @ " + ip_SOLIDserver + " with user: " + ipam_user + " pass: " + ipam_passwd)
     con = SOLIDserverRest.SOLIDserverRest(ip_SOLIDserver)
     con.use_native_ssd(user=ipam_user, password=ipam_passwd)
-    sync_subnet_group(con, adom, True)
-    sync_addr(con, adom, True)
-    sync_pool(con, adom, True)
+    sync_subnet_group(con, adom, sync_delete)
+    sync_addr(con, adom, sync_delete)
+    sync_pool(con, adom, sync_delete)
     helpers.api.logout()
     time.sleep(15)
 

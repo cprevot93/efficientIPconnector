@@ -26,10 +26,13 @@ ENV IPAM_USER=${ipam_user}
 ARG ipam_passwd=admin
 ENV IPAM_PASSWD=${ipam_passwd}
 
+ARG sync_delete=1
+ENV SYNC_DELETE=${sync_delete}
+
 WORKDIR /opt
 ADD requirements.txt .
 ADD connector/ connector
 ADD $lib/ $lib
 RUN pip install -r requirements.txt
 RUN cd ${lib} && python setup.py install
-CMD python -m connector ${IP_FMG} ${IP_SOLIDserver} ${ADOM} ${FMG_USER} ${FMG_PASSWD} ${IPAM_USER} ${IPAM_PASSWD}
+CMD python -m connector ${IP_FMG} ${IP_SOLIDserver} ${ADOM} ${FMG_USER} ${FMG_PASSWD} ${IPAM_USER} ${IPAM_PASSWD} ${SYNC_DELETE}
