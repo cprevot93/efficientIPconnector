@@ -24,12 +24,12 @@ ARG ipam_user=ipmadmin
 ENV IPAM_USER=${ipam_user}
 
 ARG ipam_passwd=admin
-ENV IPAM_PASSWD=${ipam_passwd}}
+ENV IPAM_PASSWD=${ipam_passwd}
 
 WORKDIR /opt
 ADD requirements.txt .
 ADD connector/ connector
 ADD $lib/ $lib
 RUN pip install -r requirements.txt
-RUN cd ftntlib-0.4.0.dev13 && python setup.py install
+RUN cd ${lib} && python setup.py install
 CMD python -m connector ${IP_FMG} ${IP_SOLIDserver} ${ADOM} ${FMG_USER} ${FMG_PASSWD} ${IPAM_USER} ${IPAM_PASSWD}
