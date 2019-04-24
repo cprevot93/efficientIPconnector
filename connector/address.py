@@ -25,4 +25,5 @@ class Address(Subnet):
         or self.get_subnet() != other.get_subnet() or self.is_ipv6() != other.is_ipv6()
 
   def get_FMG_name(self):
-    return str(self.get_id()) + '-' + self.get_name()
+    # return str(self.get_id()) + '-' + self.get_name()
+    return self.get_name() + '_' + self.get_parent()

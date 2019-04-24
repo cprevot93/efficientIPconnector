@@ -72,12 +72,12 @@ def sync_FMG(ip_FMG, fmg_user, fmg_passwd, adom):
           if ipv6:
             ip = re.split('[/]', d['ip6'])
             if ip[1] == '128':
-              addresses.append(Address(m[1], ip[0], adom, ipv6=ipv6, _id=int(m[0]), parent=None))
+              addresses.append(Address(m[0], ip[0], adom, ipv6=ipv6, _id=0, parent=m[1] + '_' + m[2]))
             else:
               subnets.append(Subnet(m[1], ip[0], ip[1], adom, ipv6=ipv6, _id=int(m[0]), parent=m[2]))
           else:
             if d['subnet'][1] == '255.255.255.255':
-              addresses.append(Address(m[1], d['subnet'][0], adom, ipv6=ipv6, _id=int(m[0]), parent=None))
+              addresses.append(Address(m[0], d['subnet'][0], adom, ipv6=ipv6, _id=0, parent=m[1] + '_' + m[2]))
             else:
               subnets.append(Subnet(m[1], d['subnet'][0], d['subnet'][1], adom, ipv6=ipv6, _id=int(m[0]), parent=m[2]))
         elif d['type'] == 1:
