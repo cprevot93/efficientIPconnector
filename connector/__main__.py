@@ -9,12 +9,8 @@ import sys
 import json
 import time
 import re
-from .subnet import Subnet
-from .group import Group
-from .address import Address
-from .pool import Pool
-from . import helpers
 import SOLIDserverRest
+from . import Subnet, Group, Address, Pool, helpers
 
 if len(sys.argv) < 9:
   print('Usage: connector IP_FMG IP_SOLIDserver adom fmg_user fmg_passwd ipam_user ipam_passwd sync_delete timer_refresh')
